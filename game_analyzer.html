@@ -1,0 +1,2849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Analyzer — Combinatorial Game Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Tokens */
+:root {
+  --paper:        #faf8f3;
+  --card:         #ffffff;
+  --ink-900:      #1a1815;
+  --ink-700:      #3d3a35;
+  --ink-500:      #6e6a62;
+  --ink-400:      #9b958a;
+  --ink-300:      #b8b2a4;
+  --line:         #ece7dc;
+  --line-strong:  #d8d2c4;
+  --hover:        #f4f1ea;
+  --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono:  'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --t-fast: .15s ease;
+  --t-base: .25s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink-900);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+button { font-family: inherit; }
+
+/* Lucide icon defaults */
+[data-lucide] {
+  width: 16px; height: 16px;
+  stroke-width: 1.75;
+  flex-shrink: 0;
+}
+
+/* Header */
+.site-header {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+.brand { display: flex; align-items: center; gap: 16px; }
+.brand-mark {
+  width: 24px; height: 24px;
+  color: var(--ink-900);
+  stroke-width: 1.5;
+}
+.brand-text { display: flex; flex-direction: column; gap: 4px; }
+.brand-name {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  color: var(--ink-900);
+  line-height: 1;
+}
+.brand-tag {
+  font-size: 12px;
+  color: var(--ink-500);
+  letter-spacing: .02em;
+  line-height: 1;
+}
+.header-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+/* Main */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 64px 48px 96px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 40px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 56px;
+}
+.tab {
+  appearance: none; background: none; border: none;
+  padding: 0 0 18px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  cursor: pointer;
+  position: relative;
+  transition: color var(--t-fast);
+}
+.tab:hover { color: var(--ink-700); }
+.tab.active { color: var(--ink-900); }
+.tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: var(--ink-900);
+}
+
+/* Panel layout */
+.game-panel { animation: fadeIn .25s ease; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+.panel-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+}
+.left-panel, .right-panel {
+  display: flex; flex-direction: column; gap: 48px;
+}
+
+/* Section */
+section { background: transparent; }
+.section-head {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.section-head [data-lucide] {
+  width: 14px; height: 14px;
+  color: var(--ink-500);
+}
+.section-head h2 {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-700);
+}
+
+.help-text {
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-bottom: 20px;
+  line-height: 1.65;
+}
+code.inline {
+  background: var(--hover);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-700);
+}
+
+/* Inputs */
+.input-row {
+  display: flex; gap: 12px; align-items: stretch;
+}
+.field-input {
+  flex: 1;
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line-strong);
+  padding: 10px 0;
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--ink-900);
+  transition: border-color var(--t-fast);
+}
+.field-input:focus { outline: none; border-bottom-color: var(--ink-900); }
+.field-input::placeholder { color: var(--ink-400); }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 22px;
+  height: 40px;
+  background: var(--ink-900);
+  color: var(--paper);
+  border: none;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.btn-primary [data-lucide] { width: 13px; height: 13px; stroke-width: 2; }
+.btn-primary:hover { background: var(--ink-700); }
+
+.presets {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 24px;
+  align-items: center;
+}
+.presets-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--ink-400);
+  margin-right: 4px;
+}
+.preset {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.preset:hover {
+  border-color: var(--ink-900);
+  color: var(--ink-900);
+  background: var(--paper);
+}
+
+.player-select {
+  display: flex; gap: 28px; flex-wrap: wrap;
+  margin-top: 28px;
+  align-items: center;
+}
+.player-select-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--ink-400);
+}
+.player-select label {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 13px;
+  color: var(--ink-700);
+  cursor: pointer;
+}
+.player-select label [data-lucide] {
+  width: 13px; height: 13px;
+  color: var(--ink-500);
+}
+.player-select input[type="radio"] {
+  appearance: none;
+  width: 14px; height: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+  transition: border-color var(--t-fast);
+}
+.player-select input[type="radio"]:checked { border-color: var(--ink-900); }
+.player-select input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--ink-900);
+}
+
+/* Pile visualization */
+.piles-container {
+  display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-end;
+  padding: 8px 0;
+}
+.pile-wrapper {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.pile-column {
+  display: flex; flex-direction: column-reverse; gap: 3px;
+  min-height: 4px;
+}
+.pile-stone {
+  width: 28px; height: 4px;
+  background: var(--ink-900);
+  border-radius: 1px;
+}
+.pile-meta {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.pile-count {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-900);
+}
+.pile-idx {
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+.pile-extra {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-500);
+}
+
+/* Board visualization */
+.board-row {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 4px 0;
+}
+.board-cell {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 4px;
+  user-select: none;
+  transition: all var(--t-fast);
+}
+.board-cell.toad {
+  background: var(--ink-900);
+  color: var(--paper);
+  border: 1px solid var(--ink-900);
+}
+.board-cell.frog {
+  background: transparent;
+  color: var(--ink-900);
+  border: 1px solid var(--ink-900);
+}
+.board-cell.empty {
+  background: transparent;
+  color: var(--ink-300);
+  border: 1px dashed var(--line-strong);
+}
+.turn-label {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-top: 20px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: var(--ink-500);
+}
+.turn-label [data-lucide] {
+  width: 14px; height: 14px;
+  color: var(--ink-900);
+}
+
+/* Cram board (2D grid) */
+.cram-board {
+  display: grid;
+  padding: 4px 0;
+}
+.cram-cell {
+  border-radius: 4px;
+  user-select: none;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.cram-cell.empty  { background: transparent;  border: 1px dashed var(--line-strong); }
+.cram-cell.filled { background: var(--ink-900); border: 1px solid var(--ink-900); }
+.cram-cell.new    { background: var(--ink-500); border: 1px solid var(--ink-900); }
+
+.cram-board-info {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-500);
+  margin-top: 14px;
+}
+
+.cram-dim-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.cram-dim-row .field-input {
+  flex: 0 0 36px;
+  text-align: center;
+}
+.dim-x {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink-400);
+  padding: 0 2px;
+}
+.cram-dim-row .btn-primary { margin-left: auto; padding: 0 14px; }
+
+.cram-moves-list {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.cram-move-card {
+  appearance: none;
+  display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-500);
+  letter-spacing: .04em;
+  transition: all var(--t-fast);
+}
+.cram-move-card:hover {
+  border-color: var(--ink-900);
+  background: var(--hover);
+  color: var(--ink-900);
+}
+.cram-move-card .cram-board { padding: 0; }
+
+/* Results */
+.classification-row {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 16px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid var(--ink-900);
+  line-height: 1;
+}
+.badge.n { background: var(--ink-900); color: var(--paper); }
+.badge.p { background: transparent;    color: var(--ink-900); }
+.xor-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--ink-500);
+  background: var(--hover);
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.explanation {
+  font-size: 14px;
+  color: var(--ink-700);
+  line-height: 1.75;
+  margin-bottom: 28px;
+  max-width: 56ch;
+}
+
+.subhead {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--ink-500);
+  margin-bottom: 14px;
+}
+.subhead [data-lucide] {
+  width: 12px; height: 12px;
+  color: var(--ink-400);
+}
+.subhead .hint {
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: var(--ink-400);
+  text-transform: none;
+  font-weight: 400;
+}
+
+.moves-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.move-btn {
+  appearance: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.move-btn:hover {
+  border-color: var(--ink-900);
+  background: var(--ink-900);
+  color: var(--paper);
+}
+.move-btn [data-lucide] {
+  width: 12px; height: 12px;
+  stroke-width: 1.75;
+}
+
+.no-moves {
+  font-size: 13px;
+  color: var(--ink-500);
+  font-style: italic;
+}
+
+.btn-back {
+  appearance: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all var(--t-fast);
+}
+.btn-back [data-lucide] { width: 12px; height: 12px; }
+.btn-back:hover {
+  border-color: var(--ink-900);
+  color: var(--ink-900);
+}
+
+.error-msg {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--line-strong);
+  border-left: 2px solid var(--ink-900);
+  border-radius: 3px;
+  background: var(--card);
+  font-size: 13px;
+  color: var(--ink-700);
+  line-height: 1.6;
+}
+.error-msg [data-lucide] {
+  width: 14px; height: 14px;
+  color: var(--ink-900);
+  margin-top: 2px;
+}
+
+/* Tree */
+.tree-section { min-height: 480px; }
+.tree-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.tree-legend {
+  display: flex; gap: 24px;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+.tree-legend span {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-900);
+}
+.legend-dot.solid  { background: var(--ink-900); }
+.legend-dot.hollow { background: var(--paper); }
+
+.depth-control {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--ink-500);
+}
+.depth-control input[type=range] {
+  appearance: none;
+  width: 120px;
+  height: 1px;
+  background: var(--line-strong);
+  outline: none;
+}
+.depth-control input[type=range]::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--ink-900);
+  cursor: pointer;
+}
+.depth-control input[type=range]::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--ink-900);
+  border: none;
+  cursor: pointer;
+}
+.depth-val {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-900);
+  text-transform: none;
+  letter-spacing: 0;
+  min-width: 14px;
+  text-align: center;
+}
+
+.tree-container {
+  min-height: 380px;
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 20px;
+  position: relative;
+  cursor: zoom-in;
+  transition: border-color var(--t-fast);
+}
+.tree-container:hover { border-color: var(--line-strong); }
+.tree-container:hover .tree-expand-hint { opacity: 1; }
+
+.tree-expand-hint {
+  position: absolute;
+  top: 14px; right: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--ink-900);
+  color: var(--paper);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  padding: 5px 10px;
+  border-radius: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.tree-expand-hint [data-lucide] {
+  width: 11px; height: 11px;
+  stroke-width: 2;
+}
+
+.tree-placeholder {
+  min-height: 340px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px;
+  color: var(--ink-400);
+  font-size: 12px;
+  letter-spacing: .04em;
+  cursor: default;
+}
+.tree-placeholder [data-lucide] {
+  width: 28px; height: 28px;
+  stroke-width: 1;
+  color: var(--ink-300);
+}
+
+/* Tree Modal */
+.tree-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(26, 24, 21, .6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center; justify-content: center;
+  animation: fadeIn .2s ease;
+  padding: 24px;
+}
+.tree-modal-box {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  width: min(1200px, 96vw);
+  height: min(820px, 94vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(26, 24, 21, .25);
+}
+.tree-modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+}
+.tree-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+.tree-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tree-zoom-btn {
+  appearance: none;
+  width: 30px; height: 30px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-700);
+  transition: all var(--t-fast);
+}
+.tree-zoom-btn:hover {
+  border-color: var(--ink-900);
+  background: var(--ink-900);
+  color: var(--paper);
+}
+.tree-zoom-btn [data-lucide] { width: 14px; height: 14px; }
+.tree-zoom-level {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-700);
+  min-width: 52px;
+  text-align: center;
+  letter-spacing: .04em;
+}
+.tree-hint-text {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: var(--ink-400);
+}
+.tree-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--card);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  min-height: 0;
+}
+.tree-viewport.dragging { cursor: grabbing; }
+.tree-viewport svg {
+  position: absolute;
+  top: 0; left: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  display: block;
+}
+.tree-modal-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--ink-700);
+}
+.tree-modal-title [data-lucide] {
+  width: 14px; height: 14px;
+  color: var(--ink-500);
+}
+.tree-modal-close {
+  appearance: none;
+  width: 32px; height: 32px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-700);
+  transition: all var(--t-fast);
+}
+.tree-modal-close:hover {
+  border-color: var(--ink-900);
+  background: var(--ink-900);
+  color: var(--paper);
+}
+.tree-modal-close [data-lucide] { width: 14px; height: 14px; }
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 64px;
+}
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  color: var(--ink-400);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .panel-layout { grid-template-columns: 1fr; gap: 56px; }
+  main { padding: 56px 40px 80px; }
+  .header-inner, .footer-inner { padding-left: 40px; padding-right: 40px; }
+}
+@media (max-width: 768px) {
+  .header-inner {
+    padding: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-meta { display: none; }
+  main { padding: 48px 28px 72px; }
+  .footer-inner {
+    padding: 24px 28px;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  .tabs { gap: 28px; margin-bottom: 40px; }
+  .left-panel, .right-panel { gap: 40px; }
+  .panel-layout { gap: 40px; }
+  .tree-controls { gap: 20px; }
+  .tree-legend { gap: 18px; }
+}
+@media (max-width: 480px) {
+  .header-inner { padding: 24px 20px; }
+  main { padding: 36px 20px 56px; }
+  .footer-inner { padding: 20px; }
+  .brand-tag { display: none; }
+  .input-row { flex-direction: column; }
+  .btn-primary { width: 100%; justify-content: center; height: 44px; }
+  .field-input { font-size: 16px; padding: 12px 0; }
+  .tabs { gap: 24px; }
+  .board-cell { width: 38px; height: 38px; font-size: 12px; }
+  .piles-container { gap: 22px; }
+  .pile-stone { width: 22px; }
+  .tree-container { padding: 12px; min-height: 320px; }
+  .tree-controls { flex-direction: column; align-items: flex-start; gap: 16px; }
+}
+
+/* ── Hackenbush ──────────────────────────────────────────────── */
+:root {
+  --hb-blue:      #1d4ed8;
+  --hb-blue-bg:   #eff6ff;
+  --hb-blue-line: #bfdbfe;
+  --hb-red:       #b91c1c;
+  --hb-red-bg:    #fff1f2;
+  --hb-red-line:  #fecdd3;
+}
+.hb-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: start;
+}
+@media (max-width: 768px) { .hb-layout { grid-template-columns: 1fr; gap: 40px; } }
+
+.hb-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.hb-btn-blue, .hb-btn-red {
+  appearance: none;
+  display: inline-flex; align-items: center;
+  padding: 0 16px; height: 36px;
+  border: none; border-radius: 3px;
+  font-size: 11px; font-weight: 600; font-family: var(--mono);
+  letter-spacing: .1em; cursor: pointer;
+  color: #fff;
+  transition: opacity var(--t-fast);
+}
+.hb-btn-blue { background: var(--hb-blue); }
+.hb-btn-red  { background: var(--hb-red); }
+.hb-btn-blue:hover, .hb-btn-red:hover { opacity: .82; }
+.hb-btn-ghost {
+  appearance: none;
+  display: inline-flex; align-items: center;
+  padding: 0 14px; height: 36px;
+  background: transparent; color: var(--ink-700);
+  border: 1px solid var(--line-strong); border-radius: 3px;
+  font-size: 11px; font-family: var(--sans);
+  cursor: pointer; transition: all var(--t-fast);
+}
+.hb-btn-ghost:hover { border-color: var(--ink-900); color: var(--ink-900); }
+
+.hb-edge-strip {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+  min-height: 44px; padding: 6px 10px;
+  border-bottom: 1px solid var(--line-strong);
+  margin-bottom: 24px;
+}
+.hb-strip-empty { font-size: 12px; color: var(--ink-400); font-style: italic; }
+.hb-edge-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 3px;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  cursor: pointer; border: none;
+  transition: opacity var(--t-fast), transform var(--t-fast);
+}
+.hb-edge-chip:hover { opacity: .72; transform: scale(.91); }
+.hb-chip-blue { background: var(--hb-blue); color: #fff; }
+.hb-chip-red  { background: var(--hb-red);  color: #fff; }
+
+.hb-result-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.hb-rlabel {
+  font-size: 10px; font-weight: 500; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink-400);
+  min-width: 60px; padding-top: 4px; flex-shrink: 0;
+}
+.hb-rvalue { font-family: var(--mono); font-size: 14px; color: var(--ink-900); }
+
+.hb-sign-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.hb-sign-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 4px;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+}
+.hb-sc-plus  { background: var(--hb-blue-bg); color: var(--hb-blue); border: 1px solid var(--hb-blue-line); }
+.hb-sc-minus { background: var(--hb-red-bg);  color: var(--hb-red);  border: 1px solid var(--hb-red-line); }
+
+.hb-value-big {
+  font-family: var(--serif); font-size: 40px; font-weight: 500;
+  color: var(--ink-900); letter-spacing: -.02em;
+  margin: 4px 0 20px;
+}
+
+.hb-diagram {
+  margin-top: 28px; padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.hb-diagram-label {
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-400); margin-bottom: 14px; display: block;
+}
+.hb-svg-wrap { max-height: 420px; overflow-y: auto; }
+
+.hb-examples { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--line); }
+.hb-ex-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.hb-ex-pill {
+  appearance: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  font-size: 12px; background: var(--card); cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+  user-select: none;
+}
+.hb-ex-pill:hover { background: var(--hover); border-color: var(--ink-300); }
+.hb-ex-num   { font-family: var(--mono); font-weight: 600; color: var(--ink-700); }
+.hb-ex-arrow { color: var(--ink-300); }
+.hb-ex-str   { font-family: var(--mono); }
+.hb-ex-str .hb-b { color: var(--hb-blue); font-weight: 700; }
+.hb-ex-str .hb-r { color: var(--hb-red);  font-weight: 700; }
+.hb-empty-hint { font-size: 13px; color: var(--ink-500); font-style: italic; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <i data-lucide="git-fork" class="brand-mark"></i>
+      <div class="brand-text">
+        <span class="brand-name">Game Analyzer</span>
+        <span class="brand-tag">Combinatorial game theory</span>
+      </div>
+    </div>
+    <span class="header-meta">N · P Classifier</span>
+  </div>
+</header>
+
+<main>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-game="nim">Nim</button>
+    <button class="tab" data-game="toads_frogs">Toads &amp; Frogs</button>
+    <button class="tab" data-game="cram">Cram</button>
+    <button class="tab" data-game="hackenbush">Hackenbush</button>
+  </nav>
+
+  <!-- NIM -->
+  <div id="nim-panel" class="game-panel">
+    <div class="panel-layout">
+      <div class="left-panel">
+
+        <section class="input-section">
+          <div class="section-head">
+            <i data-lucide="sliders-horizontal"></i>
+            <h2>Position</h2>
+          </div>
+          <p class="help-text">Comma-separated pile sizes — for example <code class="inline">3, 4, 5</code>.</p>
+          <div class="input-row">
+            <input id="nim-input" type="text" value="3,4,5" placeholder="3, 4, 5" class="field-input" autocomplete="off" spellcheck="false">
+            <button id="nim-analyze" class="btn-primary">
+              <i data-lucide="play"></i><span>Analyze</span>
+            </button>
+          </div>
+          <div class="presets">
+            <span class="presets-label">Examples</span>
+            <button class="preset" data-nim="1,2,3">1, 2, 3</button>
+            <button class="preset" data-nim="3,5,7">3, 5, 7</button>
+            <button class="preset" data-nim="1,1,1">1, 1, 1</button>
+            <button class="preset" data-nim="4,4">4, 4</button>
+            <button class="preset" data-nim="7">7</button>
+          </div>
+        </section>
+
+        <section id="nim-pile-display" class="viz-section" style="display:none">
+          <div class="section-head">
+            <i data-lucide="layers"></i>
+            <h2>Piles</h2>
+          </div>
+          <div id="nim-piles" class="piles-container"></div>
+        </section>
+
+        <section id="nim-results" class="results-section" style="display:none">
+          <div class="section-head">
+            <i data-lucide="target"></i>
+            <h2>Result</h2>
+          </div>
+          <div id="nim-results-body"></div>
+        </section>
+
+      </div>
+
+      <div class="right-panel">
+        <section class="tree-section">
+          <div class="section-head">
+            <i data-lucide="git-fork"></i>
+            <h2>Game Tree</h2>
+          </div>
+          <div class="tree-controls">
+            <div class="tree-legend">
+              <span><span class="legend-dot solid"></span>N · Next wins</span>
+              <span><span class="legend-dot hollow"></span>P · Previous wins</span>
+            </div>
+            <div class="depth-control">
+              <label>Depth</label>
+              <input id="nim-depth" type="range" min="1" max="5" value="3">
+              <span id="nim-depth-val" class="depth-val">3</span>
+            </div>
+          </div>
+          <div id="nim-tree-container" class="tree-container">
+            <div class="tree-placeholder">
+              <i data-lucide="git-fork"></i>
+              <span>Analyze a position to render the game tree</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOADS & FROGS -->
+  <div id="toads-frogs-panel" class="game-panel" style="display:none">
+    <div class="panel-layout">
+      <div class="left-panel">
+
+        <section class="input-section">
+          <div class="section-head">
+            <i data-lucide="sliders-horizontal"></i>
+            <h2>Position</h2>
+          </div>
+          <p class="help-text">
+            <code class="inline">T</code> = Toad (moves rightward),
+            <code class="inline">F</code> = Frog (moves leftward),
+            <code class="inline">_</code> = empty. For example <code class="inline">TT_FF</code>.
+          </p>
+          <div class="input-row">
+            <input id="tf-input" type="text" value="TT_FF" placeholder="TT_FF" class="field-input" autocomplete="off" spellcheck="false">
+            <button id="tf-analyze" class="btn-primary">
+              <i data-lucide="play"></i><span>Analyze</span>
+            </button>
+          </div>
+          <div class="player-select">
+            <span class="player-select-label">Turn</span>
+            <label><input type="radio" name="tf-player" value="T" checked> Toads <i data-lucide="arrow-right"></i></label>
+            <label><input type="radio" name="tf-player" value="F"> Frogs <i data-lucide="arrow-left"></i></label>
+          </div>
+          <div class="presets">
+            <span class="presets-label">Examples</span>
+            <button class="preset" data-tf="T_F"     data-player="T">T_F</button>
+            <button class="preset" data-tf="TT_FF"   data-player="T">TT_FF</button>
+            <button class="preset" data-tf="TTT_FFF" data-player="T">TTT_FFF</button>
+            <button class="preset" data-tf="T__F"    data-player="F">T__F</button>
+          </div>
+        </section>
+
+        <section id="tf-board-display" class="viz-section" style="display:none">
+          <div class="section-head">
+            <i data-lucide="grid-2x2"></i>
+            <h2>Board</h2>
+          </div>
+          <div id="tf-board" class="board-row"></div>
+          <div id="tf-turn-label" class="turn-label"></div>
+        </section>
+
+        <section id="tf-results" class="results-section" style="display:none">
+          <div class="section-head">
+            <i data-lucide="target"></i>
+            <h2>Result</h2>
+          </div>
+          <div id="tf-results-body"></div>
+        </section>
+
+      </div>
+
+      <div class="right-panel">
+        <section class="tree-section">
+          <div class="section-head">
+            <i data-lucide="git-fork"></i>
+            <h2>Game Tree</h2>
+          </div>
+          <div class="tree-controls">
+            <div class="tree-legend">
+              <span><span class="legend-dot solid"></span>N · Next wins</span>
+              <span><span class="legend-dot hollow"></span>P · Previous wins</span>
+            </div>
+            <div class="depth-control">
+              <label>Depth</label>
+              <input id="tf-depth" type="range" min="1" max="5" value="3">
+              <span id="tf-depth-val" class="depth-val">3</span>
+            </div>
+          </div>
+          <div id="tf-tree-container" class="tree-container">
+            <div class="tree-placeholder">
+              <i data-lucide="git-fork"></i>
+              <span>Analyze a position to render the game tree</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- HACKENBUSH -->
+  <div id="hackenbush-panel" class="game-panel" style="display:none">
+    <div class="hb-layout">
+
+      <!-- Left col: Number → String -->
+      <div>
+        <section class="input-section">
+          <div class="section-head">
+            <i data-lucide="hash"></i>
+            <h2>Number → String</h2>
+          </div>
+          <p class="help-text">
+            Enter a dyadic rational — denominator must be a power of 2, e.g.
+            <code class="inline">3/4</code>, <code class="inline">-5/8</code>, <code class="inline">3</code>.
+          </p>
+          <div class="input-row">
+            <input id="hb-num-input" type="text" placeholder="e.g. 3/4" class="field-input" autocomplete="off" spellcheck="false">
+            <button id="hb-num-analyze" class="btn-primary">
+              <i data-lucide="play"></i><span>Convert</span>
+            </button>
+          </div>
+          <div class="presets">
+            <span class="presets-label">Examples</span>
+            <button class="preset" data-hbnum="3/4">3/4</button>
+            <button class="preset" data-hbnum="3/2">3/2</button>
+            <button class="preset" data-hbnum="5/4">5/4</button>
+            <button class="preset" data-hbnum="-3/4">−3/4</button>
+            <button class="preset" data-hbnum="7/8">7/8</button>
+            <button class="preset" data-hbnum="-5/2">−5/2</button>
+          </div>
+        </section>
+
+        <section id="hb-num-result" style="display:none">
+          <div class="section-head" style="margin-top:40px">
+            <i data-lucide="target"></i>
+            <h2>Result</h2>
+          </div>
+          <div class="hb-result-row">
+            <span class="hb-rlabel">Value</span>
+            <span class="hb-rvalue" id="hb-num-val"></span>
+          </div>
+          <div class="hb-result-row">
+            <span class="hb-rlabel">Signs</span>
+            <div class="hb-sign-row" id="hb-num-signs"></div>
+          </div>
+          <div class="hb-result-row">
+            <span class="hb-rlabel">String</span>
+            <span class="hb-rvalue" id="hb-num-str"></span>
+          </div>
+          <div class="hb-diagram">
+            <span class="hb-diagram-label">Hackenbush string — ground at bottom</span>
+            <div class="hb-svg-wrap" id="hb-num-svg"></div>
+          </div>
+        </section>
+        <p id="hb-num-empty" class="hb-empty-hint" style="margin-top:8px">Enter a dyadic rational above to see its Hackenbush string.</p>
+      </div>
+
+      <!-- Right col: String → Number -->
+      <div>
+        <section class="input-section">
+          <div class="section-head">
+            <i data-lucide="layers"></i>
+            <h2>String → Number</h2>
+          </div>
+          <p class="help-text">
+            Build a string edge by edge, or paste one directly — Blue (B) = Left move (+), Red (R) = Right move (−).
+            Click any edge chip to remove it.
+          </p>
+          <div class="hb-controls">
+            <button class="hb-btn-blue" onclick="hbAddEdge('+')">+ Blue</button>
+            <button class="hb-btn-red"  onclick="hbAddEdge('-')">+ Red</button>
+            <button class="hb-btn-ghost" onclick="hbRemoveLast()">⌫ Undo</button>
+            <button class="hb-btn-ghost" onclick="hbClear()">✕ Clear</button>
+          </div>
+          <div class="hb-edge-strip" id="hb-edge-strip">
+            <span class="hb-strip-empty">No edges yet</span>
+          </div>
+          <div class="input-row">
+            <input id="hb-str-input" type="text" placeholder="or paste: BRB / +-+" class="field-input" autocomplete="off" spellcheck="false">
+            <button id="hb-str-load" class="btn-primary">
+              <i data-lucide="upload"></i><span>Load</span>
+            </button>
+          </div>
+        </section>
+
+        <section id="hb-str-result" style="display:none">
+          <div class="section-head" style="margin-top:40px">
+            <i data-lucide="target"></i>
+            <h2>Value</h2>
+          </div>
+          <div class="hb-value-big" id="hb-str-val"></div>
+          <div class="hb-result-row">
+            <span class="hb-rlabel">Signs</span>
+            <div class="hb-sign-row" id="hb-str-signs"></div>
+          </div>
+          <div class="hb-diagram">
+            <span class="hb-diagram-label">Hackenbush string — ground at bottom</span>
+            <div class="hb-svg-wrap" id="hb-str-svg"></div>
+          </div>
+        </section>
+        <p id="hb-str-empty" class="hb-empty-hint" style="margin-top:8px">Add edges above to compute the game value.</p>
+      </div>
+
+    </div>
+
+    <!-- Examples row -->
+    <div class="hb-examples">
+      <div class="section-head">
+        <i data-lucide="bookmark"></i>
+        <h2>Quick Examples — click to load</h2>
+      </div>
+      <div class="hb-ex-grid" id="hb-ex-grid"></div>
+    </div>
+  </div>
+
+  <!-- CRAM -->
+  <div id="cram-panel" class="game-panel" style="display:none">
+    <div class="panel-layout">
+      <div class="left-panel">
+
+        <section class="input-section">
+          <div class="section-head">
+            <i data-lucide="sliders-horizontal"></i>
+            <h2>Position</h2>
+          </div>
+          <p class="help-text">
+            Players alternate placing <strong>1×2 dominoes</strong> (horizontal or vertical) on an empty rectangular board. Whoever can't move loses. Pick the board size and analyze the empty position.
+          </p>
+          <div class="input-row cram-dim-row">
+            <input id="cram-rows" type="text" inputmode="numeric" value="3" class="field-input" autocomplete="off" spellcheck="false">
+            <span class="dim-x">×</span>
+            <input id="cram-cols" type="text" inputmode="numeric" value="3" class="field-input" autocomplete="off" spellcheck="false">
+            <button id="cram-analyze" class="btn-primary">
+              <i data-lucide="play"></i><span>Analyze</span>
+            </button>
+          </div>
+          <div class="presets">
+            <span class="presets-label">Examples</span>
+            <button class="preset" data-cram-rows="2" data-cram-cols="2">2 × 2</button>
+            <button class="preset" data-cram-rows="2" data-cram-cols="3">2 × 3</button>
+            <button class="preset" data-cram-rows="3" data-cram-cols="3">3 × 3</button>
+            <button class="preset" data-cram-rows="3" data-cram-cols="4">3 × 4</button>
+            <button class="preset" data-cram-rows="4" data-cram-cols="4">4 × 4</button>
+          </div>
+        </section>
+
+        <section id="cram-board-display" class="viz-section" style="display:none">
+          <div class="section-head">
+            <i data-lucide="grid-2x2"></i>
+            <h2>Board</h2>
+          </div>
+          <div id="cram-board"></div>
+          <div id="cram-board-info" class="cram-board-info"></div>
+        </section>
+
+        <section id="cram-results" class="results-section" style="display:none">
+          <div class="section-head">
+            <i data-lucide="target"></i>
+            <h2>Result</h2>
+          </div>
+          <div id="cram-results-body"></div>
+        </section>
+
+      </div>
+
+      <div class="right-panel">
+        <section class="tree-section">
+          <div class="section-head">
+            <i data-lucide="git-fork"></i>
+            <h2>Game Tree</h2>
+          </div>
+          <div class="tree-controls">
+            <div class="tree-legend">
+              <span><span class="legend-dot solid"></span>N · Next wins</span>
+              <span><span class="legend-dot hollow"></span>P · Previous wins</span>
+            </div>
+            <div class="depth-control">
+              <label>Depth</label>
+              <input id="cram-depth" type="range" min="1" max="5" value="3">
+              <span id="cram-depth-val" class="depth-val">3</span>
+            </div>
+          </div>
+          <div id="cram-tree-container" class="tree-container">
+            <div class="tree-placeholder">
+              <i data-lucide="git-fork"></i>
+              <span>Analyze a position to render the game tree</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>Combinatorial Game Theory</span>
+    <span>Sprague · Grundy</span>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+/* Icon helper */
+function refreshIcons() {
+  if (window.lucide && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+  }
+}
+
+/*
+  GAME LOGIC
+  Each game is represented as a state class that knows how to
+  enumerate its legal successor states (getMoves), report whether
+  it's terminal, and expose a string "key" used for memoization
+  in the solver. The solver itself (createSolver below) is
+  game-agnostic — it only relies on this small interface. To add
+  a new game, write another state class with the same shape.
+*/
+
+/*
+  Nim — classical impartial game: several piles of stones; on
+  your turn you take any positive number of stones from a single
+  pile; whoever takes the last stone wins (normal-play
+  convention).
+
+  Sprague–Grundy theorem says the position is a P-position
+  (previous player wins, i.e. current player loses with optimal
+  play) iff the XOR of pile sizes is 0. We could short-circuit
+  the solver using that, but the generic minimax via getMoves
+  still works and is what lets the same engine handle other
+  games like Toads & Frogs.
+*/
+class NimState {
+  constructor(piles) {
+    this.piles = piles.map(Number);
+    // The order of piles doesn't change Nim's value, so we sort
+    // before keying. This makes [3,4,5], [4,5,3], [5,3,4] all hit
+    // the same memo slot — a big speedup when the same multiset
+    // shows up via different move sequences.
+    this.key   = JSON.stringify(this.piles.slice().sort((a,b)=>a-b));
+  }
+  isTerminal() { return this.piles.every(p => p === 0); }
+
+  getMoves() {
+    // For each pile i, generate every state reachable by removing
+    // 1..pile_i stones from it. Other piles stay untouched.
+    const moves = [];
+    this.piles.forEach((pile, i) => {
+      for (let r = 1; r <= pile; r++) {
+        const np = [...this.piles]; np[i] -= r;
+        moves.push(new NimState(np));
+      }
+    });
+    return moves;
+  }
+
+  // Bitwise XOR of pile sizes — the Sprague–Grundy "nim-value".
+  // Shown in the UI as an extra hint alongside the N/P verdict.
+  nimValue() { return this.piles.reduce((a, b) => a ^ b, 0); }
+
+  toDict()   { return { piles: this.piles, label: JSON.stringify(this.piles) }; }
+}
+
+/*
+  Toads & Frogs — a 1-D board of cells, each containing a Toad
+  (T), a Frog (F), or empty (_). Toads move right, Frogs move
+  left. On your turn you either slide one of your pieces into
+  an adjacent empty cell, or jump over exactly one opponent
+  piece into the empty cell just beyond it. You lose if you
+  can't move (normal-play convention).
+
+  Unlike Nim, this isn't a sum of independent piles, so we
+  can't use a closed-form Grundy trick — we genuinely need to
+  recurse over the move tree. Memoization keeps it tractable
+  for short boards (the UI caps board length at 12 to prevent
+  blowups).
+*/
+class ToadsFrogsState {
+  constructor(board, player) {
+    this.board  = board;
+    this.player = player;
+    // (board, whose turn it is) uniquely identifies a position.
+    // Same board with different player-to-move can have a totally
+    // different outcome, so both must go into the key.
+    this.key    = board + '|' + player;
+  }
+
+  getMoves() {
+    const moves = [], b = this.board.split(''), n = b.length;
+    const next = this.player === 'T' ? 'F' : 'T';
+
+    if (this.player === 'T') {
+      // Toads move right: look for "T_" (slide) or "TF_" (jump).
+      for (let i = 0; i < n; i++) {
+        if (b[i] !== 'T') continue;
+        if (i+1 < n && b[i+1] === '_') {
+          const nb=[...b]; nb[i]='_'; nb[i+1]='T';
+          moves.push(new ToadsFrogsState(nb.join(''), next));
+        }
+        if (i+2 < n && b[i+1]==='F' && b[i+2]==='_') {
+          const nb=[...b]; nb[i]='_'; nb[i+2]='T';
+          moves.push(new ToadsFrogsState(nb.join(''), next));
+        }
+      }
+    } else {
+      // Frogs move left: look for "_F" (slide) or "_TF" (jump).
+      // Mirror image of the Toad logic above.
+      for (let i = 0; i < n; i++) {
+        if (b[i] !== 'F') continue;
+        if (i-1 >= 0 && b[i-1]==='_') {
+          const nb=[...b]; nb[i]='_'; nb[i-1]='F';
+          moves.push(new ToadsFrogsState(nb.join(''), next));
+        }
+        if (i-2 >= 0 && b[i-1]==='T' && b[i-2]==='_') {
+          const nb=[...b]; nb[i]='_'; nb[i-2]='F';
+          moves.push(new ToadsFrogsState(nb.join(''), next));
+        }
+      }
+    }
+    return moves;
+  }
+
+  // No move = terminal. Implicitly handles "your pieces are all
+  // jammed against the far wall" as well as the trivial
+  // empty-of-your-pieces case.
+  isTerminal() { return this.getMoves().length === 0; }
+  toDict() {
+    return { board: this.board, player: this.player, label: `${this.board}(${this.player})` };
+  }
+}
+
+/*
+  Cram — impartial domino-placement game. Players alternate placing
+  a 1×2 domino (horizontal or vertical) on any two adjacent empty
+  cells of a rectangular grid. Whoever can't move loses (normal
+  play). Cram is the impartial cousin of Domineering, where each
+  player would be restricted to one orientation.
+
+  The state is just the board occupancy. The key is the
+  symmetry-canonical bitstring: we generate every reflection /
+  rotation that preserves the board's dimensions and take the
+  lexicographically smallest. That collapses, for example, all 4
+  "place a domino in a corner of an empty 3×3 board" positions
+  into a single memo entry — a big speedup on near-empty boards.
+*/
+class CramState {
+  constructor(rows, cols, occupied) {
+    this.rows = rows;
+    this.cols = cols;
+    // Store as Uint8Array (0/1) for cheap copies. Length is fixed
+    // at rows*cols; index = r*cols + c.
+    this.occupied = occupied instanceof Uint8Array
+      ? occupied
+      : Uint8Array.from(occupied);
+    this.key = `${rows}x${cols}|` + this._canonicalKey();
+  }
+
+  _bitString(occ) {
+    let s = '';
+    for (let i = 0; i < occ.length; i++) s += occ[i] ? '1' : '0';
+    return s;
+  }
+
+  _hflip(occ, r, c) {
+    const out = new Uint8Array(r * c);
+    for (let i = 0; i < r; i++)
+      for (let j = 0; j < c; j++)
+        out[i * c + j] = occ[i * c + (c - 1 - j)];
+    return out;
+  }
+  _vflip(occ, r, c) {
+    const out = new Uint8Array(r * c);
+    for (let i = 0; i < r; i++)
+      for (let j = 0; j < c; j++)
+        out[i * c + j] = occ[(r - 1 - i) * c + j];
+    return out;
+  }
+  _transpose(occ, r, c) {
+    // Only called when r === c (otherwise dimensions would change
+    // and the transpose wouldn't preserve the key namespace).
+    const out = new Uint8Array(r * c);
+    for (let i = 0; i < r; i++)
+      for (let j = 0; j < c; j++)
+        out[j * r + i] = occ[i * c + j];
+    return out;
+  }
+
+  _canonicalKey() {
+    const r = this.rows, c = this.cols, occ = this.occupied;
+    // Klein 4-group of reflections always preserves dimensions.
+    const v1 = occ;
+    const v2 = this._hflip(occ, r, c);
+    const v3 = this._vflip(occ, r, c);
+    const v4 = this._hflip(v3, r, c); // 180° rotation
+    const variants = [v1, v2, v3, v4];
+    // Square boards add the four transposed variants for full D4.
+    if (r === c) {
+      const t = this._transpose(occ, r, c);
+      variants.push(t, this._hflip(t, r, c), this._vflip(t, r, c),
+                    this._hflip(this._vflip(t, r, c), r, c));
+    }
+    let best = null;
+    for (const v of variants) {
+      const s = this._bitString(v);
+      if (best === null || s < best) best = s;
+    }
+    return best;
+  }
+
+  getMoves() {
+    const moves = [];
+    const r = this.rows, c = this.cols, occ = this.occupied;
+    // Horizontal dominoes: (r, j) + (r, j+1)
+    for (let i = 0; i < r; i++) {
+      for (let j = 0; j < c - 1; j++) {
+        const a = i * c + j, b = a + 1;
+        if (!occ[a] && !occ[b]) {
+          const next = new Uint8Array(occ);
+          next[a] = 1; next[b] = 1;
+          const s = new CramState(r, c, next);
+          s._lastMove = [[i, j], [i, j + 1]];
+          moves.push(s);
+        }
+      }
+    }
+    // Vertical dominoes: (i, j) + (i+1, j)
+    for (let i = 0; i < r - 1; i++) {
+      for (let j = 0; j < c; j++) {
+        const a = i * c + j, b = a + c;
+        if (!occ[a] && !occ[b]) {
+          const next = new Uint8Array(occ);
+          next[a] = 1; next[b] = 1;
+          const s = new CramState(r, c, next);
+          s._lastMove = [[i, j], [i + 1, j]];
+          moves.push(s);
+        }
+      }
+    }
+    return moves;
+  }
+
+  isTerminal() { return this.getMoves().length === 0; }
+
+  toDict() {
+    let filled = 0;
+    for (let i = 0; i < this.occupied.length; i++) filled += this.occupied[i];
+    return {
+      rows: this.rows, cols: this.cols,
+      occupied: Array.from(this.occupied),
+      lastMove: this._lastMove || null,
+      label: `${this.rows}×${this.cols}:${filled / 2}`
+    };
+  }
+}
+
+/*
+  GENERIC P/N SOLVER
+  Standard recursive definition for impartial games under normal
+  play: a position is a P-position (Previous player wins) if
+  every move leads to an N-position; a position is an N-position
+  (Next player wins) if there exists at least one move to a
+  P-position; a terminal position is a P-position (the player to
+  move has no moves and so loses).
+
+  Without memoization this is exponential, the same midgame
+  position is reachable along many move sequences. Memoization
+  collapses repeats to O(unique positions × avg-branching).
+
+  A fresh Map per analysis call lets garbage collection drop
+  everything once the user moves on, so we don't slowly leak
+  memory while exploring lots of starting positions.
+*/
+function createSolver() {
+  const memo = new Map();
+
+  function solve(state) {
+    // Memo hit — short-circuit the whole subtree.
+    if (memo.has(state.key)) return memo.get(state.key);
+
+    // No moves: current player loses, so this is a P-position
+    // from the previous player's perspective.
+    if (state.isTerminal()) { memo.set(state.key, 'P'); return 'P'; }
+
+    // If any move leads to a P-position for the opponent, the
+    // current player can force the win by playing it → N-position.
+    for (const move of state.getMoves()) {
+      if (solve(move) === 'P') { memo.set(state.key, 'N'); return 'N'; }
+    }
+
+    // Every move handed the opponent an N-position, so we lose
+    // with optimal play from both sides.
+    memo.set(state.key, 'P');
+    return 'P';
+  }
+
+  // Winning moves = moves that hand the opponent a P-position.
+  // If we're already in a P-position this returns [], reflecting
+  // that there is no escape under optimal play.
+  function bestMoves(state) { return state.getMoves().filter(m => solve(m) === 'P'); }
+
+  // Build a JSON-friendly subtree for the SVG renderer. We cap
+  // children per node so a position with dozens of legal moves
+  // doesn't produce a tree the user can't visually scan, we
+  // surface winning moves first so the interesting branches are
+  // always shown, then losing moves to fill the remainder, with
+  // a "+N more" marker for anything truncated.
+  function buildTree(state, depth, maxDepth) {
+    const cls  = solve(state);
+    const node = { state: state.toDict(), classification: cls, children: [], isTerminal: state.isTerminal() };
+
+    if (state.isTerminal() || depth >= maxDepth) {
+      if (!state.isTerminal()) node.truncated = true;
+      return node;
+    }
+
+    const all     = state.getMoves();
+    const winning = all.filter(m => solve(m) === 'P');  // good moves for the player to move
+    const losing  = all.filter(m => solve(m) === 'N');  // moves that hand opponent the win
+    const shown   = [...winning, ...losing].slice(0, 3);
+    const hidden  = all.length - shown.length;
+
+    node.children = shown.map(m => buildTree(m, depth + 1, maxDepth));
+    if (hidden > 0) node.hiddenChildren = hidden;
+    return node;
+  }
+
+  return { solve, bestMoves, buildTree };
+}
+
+/* SVG TREE */
+const TREE_INK   = '#1a1815';
+const TREE_PAPER = '#ffffff';
+const TREE_EDGE  = '#d8d2c4';
+const TREE_MUTED = '#9b958a';
+
+/*
+  SVG TREE RENDERING
+  Simple in-order layout: each leaf gets its own integer column
+  (0, 1, 2, …) and each internal node sits at the midpoint of
+  its first and last child. This avoids the complexity of a full
+  Reingold–Tilford layout while still producing tidy,
+  non-overlapping trees as long as we cap the branching factor
+  (which we do in buildTree).
+
+  Coordinates are in unscaled SVG units; the modal viewport
+  handles zoom/pan via CSS transforms, so we don't need to
+  recompute layout when the user zooms in.
+*/
+function drawTree(containerId, root) {
+  const NS = 'http://www.w3.org/2000/svg';
+  let leafIdx = 0;  // monotonically assigned to leaves left→right
+
+  // First pass: depth-first walk that assigns _depth (row) and
+  // _col (column) to every node. Leaves grab the next free
+  // integer column; internals get the midpoint of their kids.
+  function layout(node, depth) {
+    node._depth = depth;
+    if (!node.children || !node.children.length) { node._col = leafIdx++; return; }
+    node.children.forEach(c => layout(c, depth + 1));
+    node._col = (node.children[0]._col + node.children[node.children.length-1]._col) / 2;
+  }
+  // Find the deepest row so we can size the SVG canvas.
+  function maxD(node) {
+    if (!node.children || !node.children.length) return node._depth;
+    return Math.max(...node.children.map(maxD));
+  }
+
+  layout(root, 0);
+
+  // R = node radius, H = horizontal spacing between leaves,
+  // V = vertical spacing between levels, PAD = canvas margin.
+  // Minimum width of 500 avoids the SVG looking awkwardly narrow
+  // when there's only a couple of leaves.
+  const R = 18, H = 80, V = 90, PAD = 40;
+  const svgW = Math.max(500, leafIdx * H + 2 * PAD);
+  const svgH = (maxD(root) + 1) * V + 2 * PAD + 20;
+  const nx = n => PAD + n._col * H;
+  const ny = n => PAD + n._depth * V;
+
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width',  svgW);
+  svg.setAttribute('height', svgH);
+  svg.setAttribute('font-family', "'Inter', -apple-system, sans-serif");
+
+  function el(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    return e;
+  }
+  function txt(x, y, content, attrs) {
+    const t = el('text', { x, y, 'text-anchor':'middle', ...attrs });
+    t.textContent = content;
+    return t;
+  }
+
+  function drawEdges(node) {
+    (node.children || []).forEach(child => {
+      svg.appendChild(el('line', {
+        x1:nx(node), y1:ny(node)+R, x2:nx(child), y2:ny(child)-R,
+        stroke: TREE_EDGE, 'stroke-width':'1'
+      }));
+      drawEdges(child);
+    });
+  }
+
+  function drawNodes(node) {
+    // Visual encoding: N-positions are solid ink, P-positions
+    // are hollow with an ink stroke. Same hue throughout — the
+    // page sticks to a single warm-neutral palette, so we
+    // differentiate by fill/outline rather than by colour.
+    const isN       = node.classification === 'N';
+    const fill      = isN ? TREE_INK   : TREE_PAPER;
+    const labelFill = isN ? TREE_PAPER : TREE_INK;
+
+    svg.appendChild(el('circle', {
+      cx:nx(node), cy:ny(node), r:R,
+      fill, stroke: TREE_INK, 'stroke-width':'1.5'
+    }));
+    svg.appendChild(txt(nx(node), ny(node), node.classification, {
+      'dominant-baseline':'central', fill: labelFill,
+      'font-weight':'600', 'font-size':'12', 'letter-spacing':'.04em'
+    }));
+
+    const raw = node.state.label || '';
+    svg.appendChild(txt(nx(node), ny(node)+R+14,
+      raw.length > 12 ? raw.slice(0,12)+'…' : raw,
+      { fill: TREE_MUTED, 'font-size':'10', 'font-family':"'JetBrains Mono', monospace" }
+    ));
+
+    if (node.truncated || node.hiddenChildren) {
+      svg.appendChild(txt(nx(node), ny(node)+R+28,
+        node.hiddenChildren ? `+${node.hiddenChildren} more` : '…',
+        { fill: TREE_MUTED, 'font-size':'10', 'letter-spacing':'.04em' }
+      ));
+    }
+
+    (node.children || []).forEach(drawNodes);
+  }
+
+  drawEdges(root);
+  drawNodes(root);
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+  svg.style.display = 'block';
+
+  /* Render preview in container (auto-fit to width) */
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  const hint = document.createElement('div');
+  hint.className = 'tree-expand-hint';
+  hint.innerHTML = '<i data-lucide="maximize-2"></i><span>Expand</span>';
+  container.appendChild(hint);
+
+  const previewSvg = svg.cloneNode(true);
+  setTimeout(() => {
+    const scale = Math.min(1, (container.clientWidth - 44) / svgW);
+    previewSvg.setAttribute('width',  Math.round(svgW * scale));
+    previewSvg.setAttribute('height', Math.round(svgH * scale));
+  }, 0);
+  container.appendChild(previewSvg);
+
+  container.onclick = () => openTreeModal(svg, svgW, svgH);
+  refreshIcons();
+}
+
+/* TREE MODAL */
+function openTreeModal(svg, svgW, svgH) {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'tree-modal-backdrop';
+
+  const box = document.createElement('div');
+  box.className = 'tree-modal-box';
+
+  /* Header */
+  const header = document.createElement('div');
+  header.className = 'tree-modal-header';
+  const title = document.createElement('div');
+  title.className = 'tree-modal-title';
+  title.innerHTML = '<i data-lucide="git-fork"></i><span>Game Tree</span>';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'tree-modal-close';
+  closeBtn.innerHTML = '<i data-lucide="x"></i>';
+  closeBtn.addEventListener('click', close);
+  header.append(title, closeBtn);
+
+  /* Toolbar */
+  const toolbar = document.createElement('div');
+  toolbar.className = 'tree-toolbar';
+  toolbar.innerHTML = `
+    <div class="tree-zoom-controls">
+      <button class="tree-zoom-btn" data-action="out" title="Zoom out (−)"><i data-lucide="minus"></i></button>
+      <span class="tree-zoom-level">100%</span>
+      <button class="tree-zoom-btn" data-action="in"  title="Zoom in (+)"><i data-lucide="plus"></i></button>
+      <button class="tree-zoom-btn" data-action="fit" title="Fit to screen (0)"><i data-lucide="maximize"></i></button>
+    </div>
+    <span class="tree-hint-text">Drag to pan · Scroll to zoom</span>
+  `;
+  const zoomLevelEl = toolbar.querySelector('.tree-zoom-level');
+
+  /* Viewport with SVG inside */
+  const viewport = document.createElement('div');
+  viewport.className = 'tree-viewport';
+  const modalSvg = svg.cloneNode(true);
+  modalSvg.setAttribute('width',  svgW);
+  modalSvg.setAttribute('height', svgH);
+  viewport.appendChild(modalSvg);
+
+  box.append(header, toolbar, viewport);
+  backdrop.appendChild(box);
+  document.body.appendChild(backdrop);
+  refreshIcons();
+
+  /*
+    Pan/zoom state. The SVG is rendered at its natural (unscaled)
+    size and we apply a single CSS transform — translate by
+    (tx, ty) then scale by `scale` — with transform-origin at the
+    SVG's top-left. That makes the math straightforward: the
+    screen position of any SVG point p_svg is
+        p_screen = p_svg * scale + (tx, ty)
+    and we just rearrange that to keep specific points fixed
+    during zoom.
+  */
+  let scale = 1, tx = 0, ty = 0;
+  const MIN_SCALE = 0.1, MAX_SCALE = 8;
+
+  function apply() {
+    modalSvg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    zoomLevelEl.textContent = Math.round(scale * 100) + '%';
+  }
+
+  // Fit-to-screen: choose the largest scale ≤ 1 that lets the
+  // whole tree fit inside the viewport, then centre it.
+  function fit() {
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    scale = Math.min(1, vw / svgW, vh / svgH);
+    tx = (vw - svgW * scale) / 2;
+    ty = (vh - svgH * scale) / 2;
+    apply();
+  }
+
+  /*
+    Zoom while keeping the SVG point under (px, py) stationary.
+    Derivation: the SVG point currently under the cursor is
+        p_svg = (px - tx) / scale
+    After the zoom we want
+        px = p_svg * newScale + newTx
+    Solving for newTx:
+        newTx = px - p_svg * newScale
+              = px - ((px - tx) / scale) * newScale
+              = px - (px - tx) * (newScale / scale)
+  */
+  function zoomAt(px, py, factor) {
+    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * factor));
+    if (newScale === scale) return;
+    tx = px - (px - tx) * (newScale / scale);
+    ty = py - (py - ty) * (newScale / scale);
+    scale = newScale;
+    apply();
+  }
+
+  // The viewport's dimensions aren't known synchronously after
+  // append (layout hasn't run yet), so we defer fit() one frame.
+  requestAnimationFrame(fit);
+
+  /*
+    Wheel/trackpad zoom (anchored under cursor). deltaY is
+    positive when scrolling down (zoom out) and negative when
+    scrolling up (zoom in). Using exp(-deltaY * k) gives a
+    smooth, multiplicative zoom that feels consistent across
+    mice (chunky steps) and trackpads (tiny pixel deltas).
+    passive:false is required because we call preventDefault to
+    stop the page scrolling underneath the modal.
+  */
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    const factor = Math.exp(-e.deltaY * 0.0015);
+    zoomAt(e.clientX - rect.left, e.clientY - rect.top, factor);
+  }, { passive: false });
+
+  /*
+    Pointer drag to pan. Using pointer events (not mouse events)
+    so the same code path covers mouse, touch, and stylus.
+    setPointerCapture keeps the drag responsive even if the
+    pointer leaves the viewport mid-gesture.
+  */
+  let dragging = false, startX = 0, startY = 0, startTx = 0, startTy = 0;
+  viewport.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    startTx = tx;       startTy = ty;
+    viewport.classList.add('dragging');
+    try { viewport.setPointerCapture(e.pointerId); } catch {}
+  });
+  viewport.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tx = startTx + (e.clientX - startX);
+    ty = startTy + (e.clientY - startY);
+    apply();
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    viewport.classList.remove('dragging');
+    if (e && e.pointerId !== undefined) {
+      try { viewport.releasePointerCapture(e.pointerId); } catch {}
+    }
+  }
+  viewport.addEventListener('pointerup', endDrag);
+  viewport.addEventListener('pointercancel', endDrag);
+
+  /* Toolbar buttons */
+  toolbar.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const cx = viewport.clientWidth  / 2;
+    const cy = viewport.clientHeight / 2;
+    if (btn.dataset.action === 'in')  zoomAt(cx, cy, 1.25);
+    if (btn.dataset.action === 'out') zoomAt(cx, cy, 0.8);
+    if (btn.dataset.action === 'fit') fit();
+  });
+
+  /* Keyboard + close */
+  function close() {
+    backdrop.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') return close();
+    const cx = viewport.clientWidth  / 2;
+    const cy = viewport.clientHeight / 2;
+    if (e.key === '+' || e.key === '=') zoomAt(cx, cy, 1.25);
+    if (e.key === '-' || e.key === '_') zoomAt(cx, cy, 0.8);
+    if (e.key === '0') fit();
+  }
+  document.addEventListener('keydown', onKey);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+}
+
+/*
+  PER-GAME UI STATE
+  nimCurrent / tfCurrent hold a reference to the most recently
+  analyzed state and its associated solver bound to buildTree.
+  We keep these so the depth slider can re-render the tree
+  instantly without re-running validation or re-solving from
+  scratch, the memo inside the solver is preserved between
+  slider events on the same position.
+
+  nimHistory / tfHistory are simple breadcrumb stacks. When the
+  user clicks a winning move, we push the current input there
+  so the "Back" button in the results can pop it. The stacks
+  reset whenever a new top-level position is entered (typing,
+  pressing Enter, or clicking a preset).
+*/
+let nimCurrent = null;
+let tfCurrent  = null;
+let cramCurrent = null;
+let nimHistory = [];
+let tfHistory  = [];
+// Cram navigation: stack of prior {occupied, lastMove} positions so
+// Back can step out of moves the user clicked into. cramOccupied
+// is the *current* analyzed position; cramLastMove is the most
+// recently placed domino (used to highlight on the main board).
+let cramHistory  = [];
+let cramOccupied = null;
+let cramLastMove = null;
+let cramRows = 3, cramCols = 3;
+
+function classificationLabel(c) {
+  return c === 'N' ? 'N · Next player wins' : 'P · Previous player wins';
+}
+
+function showNimError(msg) {
+  const sec  = document.getElementById('nim-results');
+  const body = document.getElementById('nim-results-body');
+  sec.style.display = 'block';
+  body.innerHTML = `<div class="error-msg"><i data-lucide="alert-triangle"></i><span>${msg}</span></div>`;
+  refreshIcons();
+}
+function showTFError(msg) {
+  const sec  = document.getElementById('tf-results');
+  const body = document.getElementById('tf-results-body');
+  sec.style.display = 'block';
+  body.innerHTML = `<div class="error-msg"><i data-lucide="alert-triangle"></i><span>${msg}</span></div>`;
+  refreshIcons();
+}
+function showCramError(msg) {
+  const sec  = document.getElementById('cram-results');
+  const body = document.getElementById('cram-results-body');
+  sec.style.display = 'block';
+  body.innerHTML = `<div class="error-msg"><i data-lucide="alert-triangle"></i><span>${msg}</span></div>`;
+  refreshIcons();
+}
+
+/* NIM */
+function parseNimPiles(raw) {
+  return raw.trim().split(',')
+    .map(s => parseInt(s.trim(), 10))
+    .filter(n => Number.isInteger(n) && n >= 0);
+}
+
+function renderPiles(piles) {
+  const section   = document.getElementById('nim-pile-display');
+  const container = document.getElementById('nim-piles');
+  container.innerHTML = '';
+  if (!piles.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  piles.forEach((count, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'pile-wrapper';
+
+    if (count > 15) {
+      const ex = document.createElement('div');
+      ex.className = 'pile-extra';
+      ex.textContent = `+${count - 15}`;
+      wrap.appendChild(ex);
+    }
+
+    const col = document.createElement('div');
+    col.className = 'pile-column';
+    for (let j = 0; j < Math.min(count, 15); j++) {
+      const s = document.createElement('div');
+      s.className = 'pile-stone';
+      col.appendChild(s);
+    }
+    wrap.appendChild(col);
+
+    const meta = document.createElement('div');
+    meta.className = 'pile-meta';
+    const cnt = document.createElement('div');
+    cnt.className = 'pile-count'; cnt.textContent = count;
+    const idx = document.createElement('div');
+    idx.className = 'pile-idx'; idx.textContent = `Pile ${i + 1}`;
+    meta.appendChild(cnt); meta.appendChild(idx);
+    wrap.appendChild(meta);
+
+    container.appendChild(wrap);
+  });
+}
+
+function analyzeNim() {
+  const raw   = document.getElementById('nim-input').value;
+  const piles = parseNimPiles(raw);
+
+  // Validation order matters, emptiness first so the count
+  // check below doesn't fire a confusing "max 8 piles" error on
+  // a blank input. The size caps exist because the solver is
+  // brute-force-with-memo and would blow up memory on much
+  // larger positions; the UI mirrors them as friendly errors.
+  if (!piles.length)                    return showNimError('Enter at least one pile size.');
+  if (piles.length > 8)                 return showNimError('Maximum 8 piles supported.');
+  if (piles.reduce((a,b)=>a+b,0) > 40)  return showNimError('Total objects must be ≤ 40.');
+
+  renderPiles(piles);
+
+  // Fresh solver (and therefore fresh memo) for each analysis.
+  // The memo from a previous position has no useful overlap
+  // with this one, and we'd rather not keep it around.
+  const { solve, bestMoves, buildTree } = createSolver();
+  const state = new NimState(piles);
+  const cls   = solve(state);
+  const wins  = bestMoves(state);
+  const xor   = state.nimValue();
+  // Tree visualisation is even more expensive than just solving
+  // the recursive layout walk is O(unique states). Hide the
+  // tree for big positions; the solver verdict is still shown.
+  const canShowTree = piles.reduce((a,b)=>a+b,0) <= 25;
+  nimCurrent = { state, buildTree, canShowTree };
+
+  let explanation;
+  if (state.isTerminal()) {
+    explanation = 'Terminal position — all piles empty. The previous player took the last object and wins. P position.';
+  } else if (cls === 'P') {
+    explanation = `P position (previous player wins). XOR of pile sizes = ${xor} = 0. Any move creates a non-zero XOR, with optimal play you will lose.`;
+  } else {
+    const t = wins.length ? JSON.stringify(wins[0].piles) : '?';
+    explanation = `N position (next player wins). XOR = ${xor} ≠ 0. A winning move brings XOR to 0, e.g. move to ${t}.`;
+  }
+
+  const sec  = document.getElementById('nim-results');
+  const body = document.getElementById('nim-results-body');
+  sec.style.display = 'block';
+
+  const backHtml = nimHistory.length
+    ? `<button class="btn-back" id="nim-back-btn">
+         <i data-lucide="arrow-left"></i>
+         <span>Back to ${nimHistory[nimHistory.length - 1]}</span>
+       </button>`
+    : '';
+
+  body.innerHTML = `
+    ${backHtml}
+    <div class="classification-row">
+      <span class="badge ${cls.toLowerCase()}">${classificationLabel(cls)}</span>
+      <span class="xor-badge">XOR = ${xor}</span>
+    </div>
+    <p class="explanation">${explanation}</p>
+    <div class="subhead">
+      <i data-lucide="arrow-right"></i>
+      <span>Winning Moves</span>
+      <span class="hint">click to explore</span>
+    </div>
+    <div id="nim-best-moves" class="moves-list"></div>
+  `;
+
+  if (nimHistory.length) {
+    document.getElementById('nim-back-btn').addEventListener('click', () => {
+      const prev = nimHistory.pop();
+      document.getElementById('nim-input').value = prev;
+      analyzeNim();
+    });
+  }
+
+  const movesDiv = document.getElementById('nim-best-moves');
+  if (wins.length) {
+    wins.forEach(move => {
+      const btn = document.createElement('button');
+      btn.className = 'move-btn';
+      btn.innerHTML = `<i data-lucide="arrow-right"></i><span>[${move.piles.join(', ')}]</span>`;
+      btn.addEventListener('click', () => {
+        nimHistory.push(document.getElementById('nim-input').value);
+        document.getElementById('nim-input').value = move.piles.join(',');
+        analyzeNim();
+      });
+      movesDiv.appendChild(btn);
+    });
+  } else {
+    movesDiv.innerHTML = '<span class="no-moves">No winning moves — this is a losing position.</span>';
+  }
+
+  refreshIcons();
+
+  const maxDepth = parseInt(document.getElementById('nim-depth').value, 10);
+  if (canShowTree) {
+    drawTree('nim-tree-container', buildTree(state, 0, maxDepth));
+  } else {
+    document.getElementById('nim-tree-container').innerHTML =
+      '<div class="tree-placeholder"><i data-lucide="git-fork"></i><span>Position too large for tree (sum ≤ 25)</span></div>';
+    refreshIcons();
+  }
+}
+
+/* TOADS & FROGS */
+function renderBoard(board, player) {
+  const section  = document.getElementById('tf-board-display');
+  const boardDiv = document.getElementById('tf-board');
+  boardDiv.innerHTML = '';
+  if (!board) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  for (const ch of board) {
+    const cell = document.createElement('div');
+    cell.className = 'board-cell ' + (ch==='T' ? 'toad' : ch==='F' ? 'frog' : 'empty');
+    cell.textContent = ch === '_' ? '·' : ch;
+    boardDiv.appendChild(cell);
+  }
+  document.getElementById('tf-turn-label').innerHTML =
+    player === 'T'
+      ? '<i data-lucide="arrow-right"></i><span>Toads to move</span>'
+      : '<i data-lucide="arrow-left"></i><span>Frogs to move</span>';
+  refreshIcons();
+}
+
+function analyzeTF() {
+  const board  = document.getElementById('tf-input').value.trim().toUpperCase();
+  const player = document.querySelector('input[name="tf-player"]:checked').value;
+
+  if (!board || !/^[TF_]+$/.test(board)) return showTFError('Board must contain only T, F, and _ characters.');
+  if (board.length > 12)                  return showTFError('Board too large (maximum 12 cells).');
+
+  renderBoard(board, player);
+
+  const { solve, bestMoves, buildTree } = createSolver();
+  const state = new ToadsFrogsState(board, player);
+  const cls   = solve(state);
+  const wins  = bestMoves(state);
+  const pName = player === 'T' ? 'Toads' : 'Frogs';
+  tfCurrent = { state, buildTree };
+
+  let explanation;
+  if (state.isTerminal()) {
+    explanation = `Terminal — ${pName} have no legal moves. P position; ${pName} lose.`;
+  } else if (cls === 'P') {
+    explanation = `P position. ${pName} are in a losing position with optimal play from both sides.`;
+  } else {
+    explanation = `N position. ${pName} can force a win. ${wins.length} winning move${wins.length!==1?'s':''} available.`;
+  }
+
+  const sec  = document.getElementById('tf-results');
+  const body = document.getElementById('tf-results-body');
+  sec.style.display = 'block';
+
+  const backHtml = tfHistory.length
+    ? `<button class="btn-back" id="tf-back-btn">
+         <i data-lucide="arrow-left"></i>
+         <span>Back to ${tfHistory[tfHistory.length - 1].board} (${tfHistory[tfHistory.length - 1].player})</span>
+       </button>`
+    : '';
+
+  body.innerHTML = `
+    ${backHtml}
+    <div class="classification-row">
+      <span class="badge ${cls.toLowerCase()}">${classificationLabel(cls)}</span>
+    </div>
+    <p class="explanation">${explanation}</p>
+    <div class="subhead">
+      <i data-lucide="arrow-right"></i>
+      <span>Winning Moves</span>
+      <span class="hint">click to explore</span>
+    </div>
+    <div id="tf-best-moves" class="moves-list"></div>
+  `;
+
+  if (tfHistory.length) {
+    document.getElementById('tf-back-btn').addEventListener('click', () => {
+      const prev = tfHistory.pop();
+      document.getElementById('tf-input').value = prev.board;
+      document.querySelector(`input[name="tf-player"][value="${prev.player}"]`).checked = true;
+      analyzeTF();
+    });
+  }
+
+  const movesDiv = document.getElementById('tf-best-moves');
+  if (wins.length) {
+    wins.forEach(move => {
+      const btn = document.createElement('button');
+      btn.className = 'move-btn';
+      btn.innerHTML = `<i data-lucide="arrow-right"></i><span>${move.board} (${move.player})</span>`;
+      btn.addEventListener('click', () => {
+        tfHistory.push({ board: document.getElementById('tf-input').value.trim().toUpperCase(), player });
+        document.getElementById('tf-input').value = move.board;
+        document.querySelector(`input[name="tf-player"][value="${move.player}"]`).checked = true;
+        analyzeTF();
+      });
+      movesDiv.appendChild(btn);
+    });
+  } else {
+    movesDiv.innerHTML = '<span class="no-moves">No winning moves — this is a losing position.</span>';
+  }
+
+  refreshIcons();
+
+  const maxDepth = parseInt(document.getElementById('tf-depth').value, 10);
+  drawTree('tf-tree-container', buildTree(state, 0, maxDepth));
+}
+
+/* CRAM */
+/*
+  Render a Cram board into `parentEl`. `occupied` is the underlying
+  Uint8Array; `highlight` is an optional array of [r,c] pairs to
+  draw in the "new" colour (used on the move-card previews to show
+  where the proposed domino would land). cellPx controls scale,
+  the main board uses ~36px, move-card previews use ~14px.
+*/
+function renderCramBoard(rows, cols, occupied, highlight, parentEl, cellPx, gapPx) {
+  parentEl.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'cram-board';
+  grid.style.gridTemplateColumns = `repeat(${cols}, ${cellPx}px)`;
+  grid.style.gridAutoRows = `${cellPx}px`;
+  grid.style.gap = `${gapPx}px`;
+
+  // O(1) lookup for highlight cells (typically 2 entries for a domino).
+  const hi = new Set();
+  if (highlight) for (const [r, c] of highlight) hi.add(r * cols + c);
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = document.createElement('div');
+      const i = r * cols + c;
+      let mod;
+      if (hi.has(i))           mod = 'new';
+      else if (occupied[i])    mod = 'filled';
+      else                     mod = 'empty';
+      cell.className = `cram-cell ${mod}`;
+      grid.appendChild(cell);
+    }
+  }
+  parentEl.appendChild(grid);
+}
+
+function analyzeCram() {
+  const rRaw = document.getElementById('cram-rows').value.trim();
+  const cRaw = document.getElementById('cram-cols').value.trim();
+  const rows = parseInt(rRaw, 10);
+  const cols = parseInt(cRaw, 10);
+
+  if (!Number.isInteger(rows) || !Number.isInteger(cols)) return showCramError('Rows and columns must be integers.');
+  if (rows < 1 || cols < 1)      return showCramError('Rows and columns must be at least 1.');
+  if (Math.max(rows, cols) > 6)  return showCramError('Maximum board dimension is 6.');
+  if (rows * cols > 20)          return showCramError('Board too large to solve (max 20 cells, e.g. 4×5).');
+
+  // Dimensions changed (or first run / external reset) → start fresh.
+  if (!cramOccupied || cramRows !== rows || cramCols !== cols) {
+    cramRows = rows;
+    cramCols = cols;
+    cramOccupied = new Uint8Array(rows * cols);
+    cramLastMove = null;
+    cramHistory = [];
+  }
+
+  // Render the main board (with current "last move" highlight).
+  document.getElementById('cram-board-display').style.display = 'block';
+  renderCramBoard(rows, cols, cramOccupied, cramLastMove,
+                  document.getElementById('cram-board'), 36, 4);
+  let filled = 0;
+  for (let i = 0; i < cramOccupied.length; i++) filled += cramOccupied[i];
+  const dominoes = filled / 2;
+  const free = rows * cols - filled;
+  document.getElementById('cram-board-info').textContent =
+    `${rows}×${cols} · ${dominoes} domino${dominoes !== 1 ? 'es' : ''} placed · ${free} cell${free !== 1 ? 's' : ''} free`;
+
+  // Solve.
+  const { solve, bestMoves, buildTree } = createSolver();
+  const state = new CramState(rows, cols, cramOccupied);
+  const cls   = solve(state);
+  const wins  = bestMoves(state);
+  // Tree is more expensive than just solving, restrict to smaller
+  // boards. The branching factor on an empty 4×5 is already 31
+  // (16 horizontal + 15 vertical), which the renderer truncates,
+  // but the underlying solve over the full subtree still has to
+  // run for every node, so we cap at 16 cells for the tree view.
+  const canShowTree = rows * cols <= 16;
+  cramCurrent = { state, buildTree, canShowTree };
+
+  let explanation;
+  if (state.isTerminal()) {
+    explanation = `Terminal, no two adjacent cells are empty. The player to move loses. P position.`;
+  } else if (cls === 'P') {
+    explanation = `P position. The player to move cannot win against optimal play, every legal placement hands the opponent an N position.`;
+  } else {
+    explanation = `N position. The player to move can force a win — ${wins.length} winning move${wins.length !== 1 ? 's' : ''} available below.`;
+  }
+
+  const sec  = document.getElementById('cram-results');
+  const body = document.getElementById('cram-results-body');
+  sec.style.display = 'block';
+
+  const backHtml = cramHistory.length
+    ? `<button class="btn-back" id="cram-back-btn">
+         <i data-lucide="arrow-left"></i>
+         <span>Back (${cramHistory.length} step${cramHistory.length !== 1 ? 's' : ''})</span>
+       </button>`
+    : '';
+
+  body.innerHTML = `
+    ${backHtml}
+    <div class="classification-row">
+      <span class="badge ${cls.toLowerCase()}">${classificationLabel(cls)}</span>
+      <span class="xor-badge">${dominoes} domino${dominoes !== 1 ? 'es' : ''} on board</span>
+    </div>
+    <p class="explanation">${explanation}</p>
+    <div class="subhead">
+      <i data-lucide="arrow-right"></i>
+      <span>Winning Moves</span>
+      <span class="hint">click to play</span>
+    </div>
+    <div id="cram-best-moves" class="cram-moves-list"></div>
+  `;
+
+  if (cramHistory.length) {
+    document.getElementById('cram-back-btn').addEventListener('click', () => {
+      const prev = cramHistory.pop();
+      cramOccupied = prev.occupied;
+      cramLastMove = prev.lastMove;
+      analyzeCram();
+    });
+  }
+
+  const movesDiv = document.getElementById('cram-best-moves');
+  if (wins.length) {
+    wins.forEach(move => {
+      const card = document.createElement('button');
+      card.className = 'cram-move-card';
+      const mini = document.createElement('div');
+      // Show the *current* board with the proposed new domino
+      // highlighted on it, easier to read than showing the post
+      // move state.
+      renderCramBoard(rows, cols, cramOccupied, move._lastMove, mini, 14, 2);
+      card.appendChild(mini);
+      const [[r1, c1], [r2, c2]] = move._lastMove;
+      const orient = r1 === r2 ? 'H' : 'V';
+      const lbl = document.createElement('span');
+      lbl.textContent = `${orient} (${r1},${c1})`;
+      card.appendChild(lbl);
+      card.addEventListener('click', () => {
+        cramHistory.push({ occupied: new Uint8Array(cramOccupied), lastMove: cramLastMove });
+        cramOccupied = new Uint8Array(move.occupied);
+        cramLastMove = move._lastMove;
+        analyzeCram();
+      });
+      movesDiv.appendChild(card);
+    });
+  } else {
+    movesDiv.innerHTML = '<span class="no-moves">No winning moves, this is a losing position.</span>';
+  }
+
+  refreshIcons();
+
+  const maxDepth = parseInt(document.getElementById('cram-depth').value, 10);
+  if (canShowTree) {
+    drawTree('cram-tree-container', buildTree(state, 0, maxDepth));
+  } else {
+    document.getElementById('cram-tree-container').innerHTML =
+      '<div class="tree-placeholder"><i data-lucide="git-fork"></i><span>Position too large for tree (max 16 cells)</span></div>';
+    refreshIcons();
+  }
+}
+
+/* EVENT LISTENERS */
+const PANEL_BY_GAME = {
+  nim:         'nim-panel',
+  toads_frogs: 'toads-frogs-panel',
+  cram:        'cram-panel',
+  hackenbush:  'hackenbush-panel',
+};
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const active = tab.dataset.game;
+    for (const [game, id] of Object.entries(PANEL_BY_GAME)) {
+      document.getElementById(id).style.display = game === active ? 'block' : 'none';
+    }
+  });
+});
+
+document.getElementById('nim-analyze').addEventListener('click', () => { nimHistory = []; analyzeNim(); });
+document.getElementById('nim-input').addEventListener('keypress', e => { if (e.key === 'Enter') { nimHistory = []; analyzeNim(); } });
+document.getElementById('nim-depth').addEventListener('input', e => {
+  document.getElementById('nim-depth-val').textContent = e.target.value;
+  if (!nimCurrent) return;
+  const depth = parseInt(e.target.value, 10);
+  if (nimCurrent.canShowTree) {
+    drawTree('nim-tree-container', nimCurrent.buildTree(nimCurrent.state, 0, depth));
+  }
+});
+document.querySelectorAll('.preset[data-nim]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    nimHistory = [];
+    document.getElementById('nim-input').value = btn.dataset.nim;
+    analyzeNim();
+  });
+});
+
+document.getElementById('tf-analyze').addEventListener('click', () => { tfHistory = []; analyzeTF(); });
+document.getElementById('tf-input').addEventListener('keypress', e => { if (e.key === 'Enter') { tfHistory = []; analyzeTF(); } });
+document.getElementById('tf-depth').addEventListener('input', e => {
+  document.getElementById('tf-depth-val').textContent = e.target.value;
+  if (!tfCurrent) return;
+  const depth = parseInt(e.target.value, 10);
+  drawTree('tf-tree-container', tfCurrent.buildTree(tfCurrent.state, 0, depth));
+});
+document.querySelectorAll('.preset[data-tf]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    tfHistory = [];
+    document.getElementById('tf-input').value = btn.dataset.tf;
+    document.querySelector(`input[name="tf-player"][value="${btn.dataset.player}"]`).checked = true;
+    analyzeTF();
+  });
+});
+
+document.getElementById('cram-analyze').addEventListener('click', () => {
+  // Analyze button always starts fresh from an empty board with
+  // the current dimensions, that's also how you "reset" mid-
+  // exploration. Force a reset by nulling occupied so analyzeCram
+  // rebuilds a fresh Uint8Array even if dims didn't change.
+  cramOccupied = null;
+  cramLastMove = null;
+  cramHistory  = [];
+  analyzeCram();
+});
+['cram-rows', 'cram-cols'].forEach(id => {
+  document.getElementById(id).addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+      cramOccupied = null;
+      cramLastMove = null;
+      cramHistory  = [];
+      analyzeCram();
+    }
+  });
+});
+document.getElementById('cram-depth').addEventListener('input', e => {
+  document.getElementById('cram-depth-val').textContent = e.target.value;
+  if (!cramCurrent || !cramCurrent.canShowTree) return;
+  const depth = parseInt(e.target.value, 10);
+  drawTree('cram-tree-container', cramCurrent.buildTree(cramCurrent.state, 0, depth));
+});
+document.querySelectorAll('.preset[data-cram-rows]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('cram-rows').value = btn.dataset.cramRows;
+    document.getElementById('cram-cols').value = btn.dataset.cramCols;
+    cramOccupied = null;
+    cramLastMove = null;
+    cramHistory  = [];
+    analyzeCram();
+  });
+});
+
+/* 
+   HACKENBUSH, dyadic rational ↔ Hackenbush string converter
+   Uses the surreal-number sign-expansion algorithm:
+     • Navigate the surreal tree from the root (= 0).
+     • At each step, pick simplest(lo, hi) as the midpoint.
+     • If x > mid: write + (Blue), narrow lo upward.
+     • If x < mid: write − (Red),  narrow hi downward.
+     • Stop when mid == x.
+   The resulting sign sequence is the Hackenbush string.
+  */
+
+//Pure math
+
+function hbIsPow2(n) { return n > 0 && (n & (n - 1)) === 0; }
+
+function hbGcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) { const t = b; b = a % b; a = t; }
+  return a;
+}
+
+function hbParse(s) {
+  s = s.trim();
+  if (!s) throw new Error('Empty input');
+  if (s.includes('/')) {
+    const [ns, ds] = s.split('/');
+    const num = parseInt(ns.trim(), 10), den = parseInt(ds.trim(), 10);
+    if (isNaN(num) || isNaN(den)) throw new Error('Invalid fraction');
+    if (den <= 0) throw new Error('Denominator must be positive');
+    if (!hbIsPow2(den)) throw new Error(`${den} is not a power of 2`);
+    const g = hbGcd(Math.abs(num), den);
+    return { num: num / g, den: den / g };
+  }
+  const num = parseInt(s, 10);
+  if (isNaN(num)) throw new Error('Not a valid integer or fraction p/2^k');
+  return { num, den: 1 };
+}
+
+function hbFmt(num, den) { return den === 1 ? String(num) : `${num}/${den}`; }
+
+function hbFloatToDyadic(x) {
+  if (x === 0) return { num: 0, den: 1 };
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  let den = 1;
+  while (Math.abs(x * den - Math.round(x * den)) > 1e-9 && den < (1 << 24)) den <<= 1;
+  const num = Math.round(x * den);
+  const g = hbGcd(num, den);
+  return { num: sign * (num / g), den: den / g };
+}
+
+// Simplest surreal number strictly between lo and hi.
+// lo/hi are JS numbers or ±Infinity.
+function hbSimplest(lo, hi) {
+  if (lo < 0 && hi > 0) return 0;
+  if (hi <= 0) return -hbSimplest(-hi, -lo);
+  // lo >= 0, hi > 0
+  const n = Number.isInteger(lo) ? lo + 1 : Math.ceil(lo);
+  if (hi === Infinity || n < hi) return n;
+  // No integer in open interval, both ends lie in the same unit interval.
+  const base = Math.floor(lo);
+  return base + 0.5 * hbSimplest(2 * (lo - base), 2 * (hi - base));
+}
+
+// Sign expansion of dyadic rational x → array of '+'/'-'.
+function hbNumberToSigns(x) {
+  if (x === 0) return [];
+  const signs = [];
+  let lo = -Infinity, hi = Infinity;
+  for (let i = 0; i < 120; i++) {
+    const mid = hbSimplest(lo, hi);
+    if (Math.abs(mid - x) < 1e-10) break;
+    if (x > mid) { signs.push('+'); lo = mid; }
+    else          { signs.push('-'); hi = mid; }
+  }
+  return signs;
+}
+
+// Evaluate sign sequence → dyadic rational (as float).
+function hbSignsToFloat(signs) {
+  let lo = -Infinity, hi = Infinity;
+  for (const s of signs) {
+    const mid = hbSimplest(lo, hi);
+    if (s === '+') lo = mid; else hi = mid;
+  }
+  return hbSimplest(lo, hi);
+}
+
+// Parse "BRB", "+-+", "B R B" → ['+','-','+']
+function hbParseStr(s) {
+  s = s.trim().toUpperCase().replace(/\s+/g, '');
+  if (!s) return [];
+  return [...s].map(c => {
+    if (c === 'B' || c === '+') return '+';
+    if (c === 'R' || c === '-') return '-';
+    throw new Error(`Unknown character '${c}' — use B/R or +/−`);
+  });
+}
+
+// SVG renderer
+
+function hbRenderSVG(signs) {
+  const n     = signs.length;
+  const EH    = 52;          // px per edge
+  const CX    = 58;          // horizontal centre
+  const SW    = 116;         // SVG width
+  const GY    = n * EH + 36; // ground Y
+  const SH    = GY + 38;     // SVG height
+
+  const p = [`<svg width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}" xmlns="http://www.w3.org/2000/svg">`];
+
+  // Ground line
+  p.push(`<line x1="12" y1="${GY}" x2="${SW-12}" y2="${GY}" stroke="#1a1815" stroke-width="2.5"/>`);
+  // Hatch marks
+  for (let x = 14; x < SW - 8; x += 11)
+    p.push(`<line x1="${x}" y1="${GY}" x2="${x-9}" y2="${GY+13}" stroke="#1a1815" stroke-width="1" opacity="0.4"/>`);
+
+  // Ground node
+  p.push(`<circle cx="${CX}" cy="${GY}" r="5" fill="#1a1815"/>`);
+
+  if (n === 0) {
+    p.push(`<text x="${CX}" y="${GY+26}" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="15" fill="#6e6a62">= 0</text>`);
+  } else {
+    for (let i = 0; i < n; i++) {
+      const y1   = GY - i * EH;
+      const y2   = GY - (i + 1) * EH;
+      const midY = (y1 + y2) / 2;
+      const isB  = signs[i] === '+';
+      const col  = isB ? '#1d4ed8' : '#b91c1c';
+      const lbl  = isB ? 'B' : 'R';
+      p.push(`<line x1="${CX}" y1="${y1}" x2="${CX}" y2="${y2}" stroke="${col}" stroke-width="8" stroke-linecap="round"/>`);
+      p.push(`<circle cx="${CX}" cy="${y2}" r="5" fill="${col}"/>`);
+      p.push(`<text x="${CX+15}" y="${midY+5}" font-family="'JetBrains Mono',monospace" font-size="13" font-weight="600" fill="${col}">${lbl}</text>`);
+    }
+  }
+
+  p.push('</svg>');
+  return p.join('');
+}
+
+// Shared sign-chip builder 
+
+function hbSignChips(signs) {
+  if (!signs.length)
+    return '<span style="color:var(--ink-400);font-style:italic;font-size:13px">empty (= 0)</span>';
+  return signs.map(s =>
+    `<span class="hb-sign-chip ${s === '+' ? 'hb-sc-plus' : 'hb-sc-minus'}">${s}</span>`
+  ).join('');
+}
+
+// Panel 1: Number → String
+
+function hbConvertNumber(value) {
+  const input = value !== undefined ? String(value)
+                                    : document.getElementById('hb-num-input').value;
+  if (value !== undefined) document.getElementById('hb-num-input').value = input;
+
+  const result = document.getElementById('hb-num-result');
+  const empty  = document.getElementById('hb-num-empty');
+  result.style.display = 'none';
+
+  let parsed;
+  try { parsed = hbParse(input); }
+  catch (e) {
+    empty.textContent    = e.message;
+    empty.style.display  = 'block';
+    return;
+  }
+
+  const x     = parsed.num / parsed.den;
+  const signs = hbNumberToSigns(x);
+  const str   = signs.length ? signs.map(s => s === '+' ? 'B' : 'R').join('') : '(empty string = 0)';
+
+  document.getElementById('hb-num-val').textContent  = hbFmt(parsed.num, parsed.den);
+  document.getElementById('hb-num-signs').innerHTML  = hbSignChips(signs);
+  document.getElementById('hb-num-str').textContent  = str;
+  document.getElementById('hb-num-svg').innerHTML    = hbRenderSVG(signs);
+
+  result.style.display = 'block';
+  empty.style.display  = 'none';
+  refreshIcons();
+}
+
+// Panel 2: String → Number
+
+let hbSigns = [];
+
+function hbRenderStrip() {
+  const el = document.getElementById('hb-edge-strip');
+  el.innerHTML = hbSigns.length
+    ? hbSigns.map((s, i) => {
+        const cls = s === '+' ? 'hb-chip-blue' : 'hb-chip-red';
+        const lbl = s === '+' ? 'B' : 'R';
+        return `<button class="hb-edge-chip ${cls}" onclick="hbRemoveAt(${i})" title="Click to remove">${lbl}</button>`;
+      }).join('')
+    : '<span class="hb-strip-empty">No edges yet</span>';
+  hbRefreshResult();
+}
+
+function hbAddEdge(sign) {
+  if (hbSigns.length >= 32) return;
+  hbSigns.push(sign);
+  hbRenderStrip();
+}
+function hbRemoveLast() { if (hbSigns.length) { hbSigns.pop(); hbRenderStrip(); } }
+function hbRemoveAt(i)  { hbSigns.splice(i, 1); hbRenderStrip(); }
+function hbClear()      { hbSigns = []; hbRenderStrip(); }
+
+function hbRefreshResult() {
+  const result = document.getElementById('hb-str-result');
+  const empty  = document.getElementById('hb-str-empty');
+
+  if (!hbSigns.length) {
+    result.style.display = 'none';
+    empty.style.display  = 'block';
+    empty.textContent    = 'Add edges above to compute the game value.';
+    return;
+  }
+
+  const val  = hbSignsToFloat(hbSigns);
+  const frac = hbFloatToDyadic(val);
+
+  document.getElementById('hb-str-val').textContent   = hbFmt(frac.num, frac.den);
+  document.getElementById('hb-str-signs').innerHTML   = hbSignChips(hbSigns);
+  document.getElementById('hb-str-svg').innerHTML     = hbRenderSVG(hbSigns);
+
+  result.style.display = 'block';
+  empty.style.display  = 'none';
+}
+
+function hbLoadString() {
+  const input = document.getElementById('hb-str-input').value;
+  const empty = document.getElementById('hb-str-empty');
+  let signs;
+  try { signs = hbParseStr(input); }
+  catch (e) {
+    empty.textContent   = e.message;
+    empty.style.display = 'block';
+    return;
+  }
+  if (signs.length > 32) {
+    empty.textContent   = 'String too long (max 32 edges).';
+    empty.style.display = 'block';
+    return;
+  }
+  document.getElementById('hb-str-input').value = '';
+  hbSigns = signs;
+  hbRenderStrip();
+}
+
+// Examples 
+
+const HB_EXAMPLES = [
+  '0','1','-1','2','-2',
+  '1/2','-1/2','3/4','-3/4',
+  '3/2','-3/2','5/4','5/8','7/8','-7/4','5/2',
+];
+
+function hbBuildExamples() {
+  const grid = document.getElementById('hb-ex-grid');
+  grid.innerHTML = HB_EXAMPLES.map(val => {
+    let parsed, signs;
+    try { parsed = hbParse(val); signs = hbNumberToSigns(parsed.num / parsed.den); }
+    catch { return ''; }
+    const strHTML = signs.length
+      ? signs.map(s => `<span class="${s === '+' ? 'hb-b' : 'hb-r'}">${s === '+' ? 'B' : 'R'}</span>`).join('')
+      : '<em style="color:var(--ink-300)">∅</em>';
+    return `<button class="hb-ex-pill" onclick="hbConvertNumber('${val}')">
+      <span class="hb-ex-num">${val}</span>
+      <span class="hb-ex-arrow">→</span>
+      <span class="hb-ex-str">${strHTML}</span>
+    </button>`;
+  }).join('');
+}
+
+// Event wiring 
+
+document.getElementById('hb-num-analyze').addEventListener('click', hbConvertNumber);
+document.getElementById('hb-num-input').addEventListener('keypress', e => { if (e.key === 'Enter') hbConvertNumber(); });
+document.querySelectorAll('.preset[data-hbnum]').forEach(btn => {
+  btn.addEventListener('click', () => hbConvertNumber(btn.dataset.hbnum));
+});
+
+document.getElementById('hb-str-load').addEventListener('click', hbLoadString);
+document.getElementById('hb-str-input').addEventListener('keypress', e => { if (e.key === 'Enter') hbLoadString(); });
+
+hbBuildExamples();
+hbRenderStrip();
+
+/* Initial render */
+document.getElementById('nim-depth-val').textContent  = document.getElementById('nim-depth').value;
+document.getElementById('tf-depth-val').textContent   = document.getElementById('tf-depth').value;
+document.getElementById('cram-depth-val').textContent = document.getElementById('cram-depth').value;
+renderPiles(parseNimPiles('3,4,5'));
+renderBoard('TT_FF', 'T');
+// Show an empty 3×3 Cram board so the panel isn't blank when first
+// opened, no need to run the solver until the user asks.
+renderCramBoard(3, 3, new Uint8Array(9), null,
+                document.getElementById('cram-board'), 36, 4);
+document.getElementById('cram-board-display').style.display = 'block';
+document.getElementById('cram-board-info').textContent = '3×3 · 0 dominoes placed · 9 cells free';
+refreshIcons();
+</script>
+</body>
+</html>
